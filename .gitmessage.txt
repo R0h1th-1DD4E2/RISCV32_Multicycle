@@ -1,0 +1,29 @@
+# <type>: <short summary>
+# Example: feat: add pipeline support to ALU module
+
+# Write a short, imperative summary of the change (max 50 characters)
+
+# 
+# Write a detailed description if necessary. Include:
+# - What changed?
+# - Why it changed?
+# - Any relevant background?
+# - Side effects, trade-offs, or TODOs?
+
+# Example:
+# Previously, the ALU failed to handle signed overflow during
+# subtraction. This fix ensures the result and flags are correct.
+#
+# Added test cases in alu_tb.v for edge values.
+#
+# TODO: extend to support unsigned overflow detection.
+
+# | Type	    | Purpose                               |
+# |-----------|---------------------------------------|
+# | feat	    | A new feature                         |
+# | fix	      | A bug fix                             |
+# | docs	    | Documentation-only changes            |
+# | style	    | Formatting, missing semicolons, etc.  |
+# | refactor  | Code change that isn't a bug or feat  |
+# | test	    | Adding or fixing tests                |
+# | chore	    | Build process, tooling, etc.          |
