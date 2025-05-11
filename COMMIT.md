@@ -82,3 +82,23 @@ Fixes: #17
 Stick to these types to keep the commit history clean and understandable! ✅
 
 ---
+
+🔧 Change Your Default Git Editor
+
+If you prefer to use a specific text editor for commit messages, you can change the default editor for Git using the following commands:
+
+For Vim (default on many systems):
+```
+git config --global core.editor "vim"
+```
+
+For Nano:
+```
+git config --global core.editor "nano"
+```
+
+For Visual Studio Code:
+```
+git config --global core.editor "code --wait"
+```
+---
