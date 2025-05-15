@@ -1,8 +1,8 @@
-module controller_tb;
+module test_controller;
   // DUT signals
   logic [6:0] op;
   logic Zero;
-  logic MemWrite, RegWrite, IRWrite, AdrSrc, PCUpdate;
+  logic MemWrite, RegWrite, IRWrite, AdrSrc, PCUpdate,PCWrite;
   logic [1:0] ResultSrc, ALUSrcA, ALUSrcB, ImmSrc, Branch, ALUOp;
   logic clk, reset;
   
@@ -51,7 +51,7 @@ module controller_tb;
   logic [1:0] ALUOp_exp[state_t];
   
   // Instantiate the DUT
-  controller dut (
+  Controller dut (
     .op(op),
     .Zero(Zero),
     .MemWrite(MemWrite),
@@ -66,7 +66,8 @@ module controller_tb;
     .Branch(Branch),
     .ALUOp(ALUOp),
     .clk(clk),
-    .reset(reset)
+    .reset(reset),
+    .PCWrite(PCWrite)
   );
   
   // Clock generation
@@ -274,114 +275,116 @@ module controller_tb;
   endtask
   
   // Task to test a specific instruction
-  task test_instruction(logic [6:0] opcode, string inst_name, int exp_seq[$]);
-    instruction_type = inst_name;
-    state_sequence.delete();
-    
-    // Reset before each test
-    reset = 1'b1;
+   // Task to apply an instruction and verify state transitions and outputs
+  task test_instruction(input logic [6:0] opcode, input string instr_name, input int expected_seq[$]);
+    int i;
+    state_sequence = {};
+
+    // Apply opcode
     op = opcode;
-    @(posedge clk);
-    reset = 1'b0;
-    
-    // Execute through all expected states
-    for (int i = 0; i < exp_seq.size(); i++) begin
-      state_sequence.push_back(dut.present_state);
-      check_outputs(state_t'(dut.present_state));
+
+    // Wait through all states in sequence
+    for (i = 0; i < expected_seq.size(); i++) begin
       @(posedge clk);
-    end
-    
-    // Check that we returned to FETCH state
-    state_sequence.push_back(dut.present_state);
-    
-    // Verify state sequence
-    verify_state_sequence(exp_seq);
-  endtask
-  
-  // Task to check controller outputs against expected values
-  task check_outputs(state_t current_state);
-    string error_msg = "";
-    logic local_pass = 1'b1;
-    
-    // Check each output against expected value
-    if (MemWrite != MemWrite_exp[current_state]) begin
-      error_msg = $sformatf("%s\n  MemWrite: Expected %b, Got %b", error_msg, MemWrite_exp[current_state], MemWrite);
-      local_pass = 1'b0;
-    end
-    
-    if (RegWrite != RegWrite_exp[current_state]) begin
-      error_msg = $sformatf("%s\n  RegWrite: Expected %b, Got %b", error_msg, RegWrite_exp[current_state], RegWrite);
-      local_pass = 1'b0;
-    end
-    
-    if (IRWrite != IRWrite_exp[current_state]) begin
-      error_msg = $sformatf("%s\n  IRWrite: Expected %b, Got %b", error_msg, IRWrite_exp[current_state], IRWrite);
-      local_pass = 1'b0;
-    end
-    
-    if (AdrSrc != AdrSrc_exp[current_state]) begin
-      error_msg = $sformatf("%s\n  AdrSrc: Expected %b, Got %b", error_msg, AdrSrc_exp[current_state], AdrSrc);
-      local_pass = 1'b0;
-    end
-    
-    if (PCUpdate != PCUpdate_exp[current_state]) begin
-      error_msg = $sformatf("%s\n  PCUpdate: Expected %b, Got %b", error_msg, PCUpdate_exp[current_state], PCUpdate);
-      local_pass = 1'b0;
-    end
-    
-    if (ResultSrc != ResultSrc_exp[current_state]) begin
-      error_msg = $sformatf("%s\n  ResultSrc: Expected %b, Got %b", error_msg, ResultSrc_exp[current_state], ResultSrc);
-      local_pass = 1'b0;
-    end
-    
-    if (ALUSrcA != ALUSrcA_exp[current_state]) begin
-      error_msg = $sformatf("%s\n  ALUSrcA: Expected %b, Got %b", error_msg, ALUSrcA_exp[current_state], ALUSrcA);
-      local_pass = 1'b0;
-    end
-    
-    if (ALUSrcB != ALUSrcB_exp[current_state]) begin
-      error_msg = $sformatf("%s\n  ALUSrcB: Expected %b, Got %b", error_msg, ALUSrcB_exp[current_state], ALUSrcB);
-      local_pass = 1'b0;
-    end
-    
-    if (ALUOp != ALUOp_exp[current_state]) begin
-      error_msg = $sformatf("%s\n  ALUOp: Expected %b, Got %b", error_msg, ALUOp_exp[current_state], ALUOp);
-      local_pass = 1'b0;
-    end
-    
-    // Only check Branch if we're in BEQ state (S10_BEQ)
-    if (current_state == S10_BEQ && Branch != Branch_exp[current_state]) begin
-      error_msg = $sformatf("%s\n  Branch: Expected %b, Got %b", error_msg, Branch_exp[current_state], Branch);
-      local_pass = 1'b0;
-    end
-    
-    // Only check ImmSrc if we're in states that use it
-    if ((current_state == S2_MEMADR) && (ImmSrc != ImmSrc_exp[current_state])) begin
-      error_msg = $sformatf("%s\n  ImmSrc: Expected %b, Got %b", error_msg, ImmSrc_exp[current_state], ImmSrc);
-      local_pass = 1'b0;
-    end
-    
-    // Report errors if any
-    if (!local_pass) begin
-      $display("ERROR in state %s for %s instruction:%s", 
-               current_state.name(), instruction_type, error_msg);
-      test_passed = 1'b0;
+      state_sequence.push_back(expected_seq[i]);
+
+      // Check outputs against expected values
+      if (MemWrite !== MemWrite_exp[expected_seq[i]]) begin
+        $display("ERROR in %s at state %0d: MemWrite = %b, expected = %b", instr_name, expected_seq[i], MemWrite, MemWrite_exp[expected_seq[i]]);
+        test_passed = 1'b0;
+      end
+
+      if (RegWrite !== RegWrite_exp[expected_seq[i]]) begin
+        $display("ERROR in %s at state %0d: RegWrite = %b, expected = %b", instr_name, expected_seq[i], RegWrite, RegWrite_exp[expected_seq[i]]);
+        test_passed = 1'b0;
+      end
+
+      if (IRWrite !== IRWrite_exp[expected_seq[i]]) begin
+        $display("ERROR in %s at state %0d: IRWrite = %b, expected = %b", instr_name, expected_seq[i], IRWrite, IRWrite_exp[expected_seq[i]]);
+        test_passed = 1'b0;
+      end
+
+      if (AdrSrc !== AdrSrc_exp[expected_seq[i]]) begin
+        $display("ERROR in %s at state %0d: AdrSrc = %b, expected = %b", instr_name, expected_seq[i], AdrSrc, AdrSrc_exp[expected_seq[i]]);
+        test_passed = 1'b0;
+      end
+
+      if (PCUpdate !== PCUpdate_exp[expected_seq[i]]) begin
+        $display("ERROR in %s at state %0d: PCUpdate = %b, expected = %b", instr_name, expected_seq[i], PCUpdate, PCUpdate_exp[expected_seq[i]]);
+        test_passed = 1'b0;
+      end
+
+      if (ResultSrc !== ResultSrc_exp[expected_seq[i]]) begin
+        $display("ERROR in %s at state %0d: ResultSrc = %b, expected = %b", instr_name, expected_seq[i], ResultSrc, ResultSrc_exp[expected_seq[i]]);
+        test_passed = 1'b0;
+      end
+
+      if (ALUSrcA !== ALUSrcA_exp[expected_seq[i]]) begin
+        $display("ERROR in %s at state %0d: ALUSrcA = %b, expected = %b", instr_name, expected_seq[i], ALUSrcA, ALUSrcA_exp[expected_seq[i]]);
+        test_passed = 1'b0;
+      end
+
+      if (ALUSrcB !== ALUSrcB_exp[expected_seq[i]]) begin
+        $display("ERROR in %s at state %0d: ALUSrcB = %b, expected = %b", instr_name, expected_seq[i], ALUSrcB, ALUSrcB_exp[expected_seq[i]]);
+        test_passed = 1'b0;
+      end
+
+      if (ALUOp !== ALUOp_exp[expected_seq[i]]) begin
+        $display("ERROR in %s at state %0d: ALUOp = %b, expected = %b", instr_name, expected_seq[i], ALUOp, ALUOp_exp[expected_seq[i]]);
+        test_passed = 1'b0;
+      end
+
+      if (Branch !== Branch_exp[expected_seq[i]]) begin
+        $display("ERROR in %s at state %0d: Branch = %b, expected = %b", instr_name, expected_seq[i], Branch, Branch_exp[expected_seq[i]]);
+        test_passed = 1'b0; 
+      end
+
+      if (ImmSrc !== ImmSrc_exp[expected_seq[i]]) begin
+        $display("ERROR in %s at state %0d: ImmSrc = %b, expected = %b", instr_name, expected_seq[i], ImmSrc, ImmSrc_exp[expected_seq[i]]);
+        test_passed = 1'b0;
+      end
     end
   endtask
-  
+
   // Task to verify state sequence
   task verify_state_sequence(int exp_seq[$]);
     string state_names[$];
     string exp_state_names[$];
     
-    // Convert actual sequence to state names for display
+  // Convert actual sequence to state names for display
     foreach (state_sequence[i]) begin
-      state_names.push_back(state_t'(state_sequence[i]).name());
+      case(state_sequence[i])
+        S0_FETCH: state_names.push_back("S0_FETCH");
+        S1_DECODE: state_names.push_back("S1_DECODE");
+        S2_MEMADR: state_names.push_back("S2_MEMADR");
+        S3_MEMREAD: state_names.push_back("S3_MEMREAD");
+        S4_MEMWB: state_names.push_back("S4_MEMWB");
+        S5_MEMWRITE: state_names.push_back("S5_MEMWRITE");
+        S6_EXECUTER: state_names.push_back("S6_EXECUTER");
+        S7_ALUWB: state_names.push_back("S7_ALUWB");
+        S8_EXECUTEI: state_names.push_back("S8_EXECUTEI");
+        S9_JAL: state_names.push_back("S9_JAL");
+        S10_BEQ: state_names.push_back("S10_BEQ");
+        default: state_names.push_back("UNKNOWN");
+      endcase
     end
     
     // Convert expected sequence to state names for display
     foreach (exp_seq[i]) begin
-      exp_state_names.push_back(state_t'(exp_seq[i]).name());
+      case(exp_seq[i])
+        S0_FETCH: exp_state_names.push_back("S0_FETCH");
+        S1_DECODE: exp_state_names.push_back("S1_DECODE");
+        S2_MEMADR: exp_state_names.push_back("S2_MEMADR");
+        S3_MEMREAD: exp_state_names.push_back("S3_MEMREAD");
+        S4_MEMWB: exp_state_names.push_back("S4_MEMWB");
+        S5_MEMWRITE: exp_state_names.push_back("S5_MEMWRITE");
+        S6_EXECUTER: exp_state_names.push_back("S6_EXECUTER");
+        S7_ALUWB: exp_state_names.push_back("S7_ALUWB");
+        S8_EXECUTEI: exp_state_names.push_back("S8_EXECUTEI");
+        S9_JAL: exp_state_names.push_back("S9_JAL");
+        S10_BEQ: exp_state_names.push_back("S10_BEQ");
+        default: exp_state_names.push_back("UNKNOWN");
+      endcase
     end
     
     // Check if sequences match
@@ -407,19 +410,33 @@ module controller_tb;
       if (state_sequence[exp_seq.size()] != S0_FETCH) begin
         $display("ERROR: Final state should be FETCH for %s", instruction_type);
         $display("  Expected: FETCH");
-        $display("  Got:      %s", state_t'(state_sequence[exp_seq.size()]).name());
+        $display("  Got:      %0d", state_sequence[exp_seq.size()]);
         test_passed = 1'b0;
       end
-    }
+    
     
     if (test_passed)
       $display("State sequence for %s instruction passed.", instruction_type);
+      end
   endtask
   
   // Monitor state transitions
   always @(posedge clk) begin
-    if (!reset) begin
-      $display("At time %0t: State = %s", $time, state_t'(dut.present_state).name());
+    if (!reset) begin 
+      case(dut.present_state)
+        S0_FETCH: $display("At time %0t: State = S0_FETCH", $time);
+        S1_DECODE: $display("At time %0t: State = S1_DECODE", $time);
+        S2_MEMADR: $display("At time %0t: State = S2_MEMADR", $time);
+        S3_MEMREAD: $display("At time %0t: State = S3_MEMREAD", $time);
+        S4_MEMWB: $display("At time %0t: State = S4_MEMWB", $time);
+        S5_MEMWRITE: $display("At time %0t: State = S5_MEMWRITE", $time);
+        S6_EXECUTER: $display("At time %0t: State = S6_EXECUTER", $time);
+        S7_ALUWB: $display("At time %0t: State = S7_ALUWB", $time);
+        S8_EXECUTEI: $display("At time %0t: State = S8_EXECUTEI", $time);
+        S9_JAL: $display("At time %0t: State = S9_JAL", $time);
+        S10_BEQ: $display("At time %0t: State = S10_BEQ", $time);
+        default: $display("At time %0t: State = UNKNOWN", $time);
+      endcase
     end
   end
   
