@@ -1,8 +1,32 @@
-module controller (
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 05/15/2025 05:48:49 PM
+// Design Name: 
+// Module Name: Controller
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module Controller (
+    input clk,reset, 
     input [6:0] op,
     input Zero,
     // input [2:0] funct3,
     // input [5:0] funct7,
+    output PCWrite,
     output reg MemWrite, RegWrite, IRWrite, AdrSrc, PCUpdate,
     output reg  [1:0] ResultSrc, ALUSrcA, ALUSrcB, ImmSrc, Branch,
     output reg [1:0] ALUOp // Changed from [2:0] to [1:0]
@@ -10,24 +34,35 @@ module controller (
 );
 
 parameter [3:0]S0_fetch=3'b000, // Note: Parameter width is for state variables, not ALUOp
-        S1_decode=3'b001,
-        S2_MemAdr=3'b010,
-        S3_MemRead=3'b011,
-        S4_MemWB=3'b100,
-        S5_MemWrite=3'b101,
-        S6_ExecuteR=3'b110,
-        S7_ALUWB=3'b111,
-        S8_ExecuteI=3'b1000,
-        S9_JAL=3'b1001,
-        S10_BEQ=3'b1010;
+        S1_decode=4'b0001,
+        S2_MemAdr=4'b0010,
+        S3_MemRead=4'b0011,
+        S4_MemWB=4'b0100,
+        S5_MemWrite=4'b0101,
+        S6_ExecuteR=4'b0110,
+        S7_ALUWB=4'b0111,
+        S8_ExecuteI=4'b1000,
+        S9_JAL=4'b1001,
+        S10_BEQ=4'b1010;
 reg [3:0] present_state, next_state;
 //MemWrite,RegWrite, IRWrite, AdrSrc, PCUpdate,ResultSrc, ALUSrcA, ALUSrcB, ImmSrc, Branch,ALUOp,ALUControl
 always@(*)
 begin
-    // Default values for outputs to avoid latches, if necessary
-    // For example:
-    // MemWrite = 1'b0; RegWrite = 1'b0; ... ALUOp = 2'bxx;
+    // Default values for all outputs
+    MemWrite = 1'b0;
+    RegWrite = 1'b0;
+    IRWrite = 1'b0;
+    AdrSrc = 1'b0;
+    PCUpdate = 1'b0;
+    ResultSrc = 2'b00;
+    ALUSrcA = 2'b00;
+    ALUSrcB = 2'b00;
+    ImmSrc = 2'b00;
+    Branch = 2'b00;  // This was missing in most states
+    ALUOp = 2'b00;
+    
     case(present_state)
+
        S0_fetch:
        begin
         IRWrite=1'b1;
@@ -43,7 +78,7 @@ begin
 
        S1_decode:
        begin
-          ALUSrc=2'b01;
+          ALUSrcA=2'b01;
           ALUSrcB=2'b01 ;
           ALUOp=2'b00;
           MemWrite=1'b0;
