@@ -1,7 +1,7 @@
 module Extend(
-    input [31:7] Instr,
+    input [31:7] instr,
     input [2:0]ImmSrc,
-    output [31:0]ImmExt
+    output reg  [31:0]immext
 );
     always@(*)
     begin

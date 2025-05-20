@@ -4,10 +4,12 @@ module ff_en(
         output reg [31:0] q
     );
     always @(posedge clk) begin
-        if (en) begin
+        if (en) 
             q <= d;
-        end
-        else begin
+        
+        else 
             q <= q;
-        end
+        
     end
+	 endmodule
+	 

@@ -19,8 +19,8 @@ begin
     reg_arr[A3]<=WD3;
 end
 
-assign RD1 = ( A1 != 0 ) ? reg_file_arr[A1] : 0;
-assign RD2 = ( A2 != 0 ) ? reg_file_arr[A2] : 0;
+assign RD1 = ( A1 != 0 ) ? reg_arr[A1] : 0;
+assign RD2 = ( A2 != 0 ) ? reg_arr[A2] : 0;
 endmodule
 
 // Port	Direction	Purpose

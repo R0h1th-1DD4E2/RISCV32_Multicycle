@@ -2,7 +2,7 @@ module mux4(
     input     [31:0] d0, d1, d2,d3,
     input      [1:0]  sel,
     output reg [31:0] op
-)
+);
     always @(*) begin
         case (sel)
             2'b00: op = d0;
@@ -12,3 +12,5 @@ module mux4(
             default: op = 32'h00000000; // Default case to avoid latches
         endcase
     end
+	 endmodule
+	 
