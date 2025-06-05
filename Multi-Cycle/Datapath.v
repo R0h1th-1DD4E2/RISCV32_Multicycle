@@ -1,60 +1,83 @@
-module Datapath(
-    input clk,reset,
-    input MemWrite, RegWrite, IRWrite, AdrSrc,PCWrite,
-    input  [1:0] ResultSrc, ALUSrcA, ALUSrcB, 
-    input [2:0] ImmSrc,
-    input [2:0] ALUControl,
+module Datapath (
+    input         clk, reset,
+    input         RegWrite, IRWrite, AdrSrc, PCWrite,
+    input  [1:0]  ResultSrc, ALUSrcA, ALUSrcB, 
+    input  [2:0]  ImmSrc,
+    input  [2:0]  ALUControl,
+    input  [31:0] Mem_RdData,
     output [31:0] PC,
-    output Zero,
-    output [31:0] Mem_WrAddr,Mem_WrData,Result
+    output        Zero,
+    output        func7b5,
+    output [2:0]  func3,
+    output [6:0]  op,
+    output [31:0] Mem_WrAddr, Mem_WrData, Result
 );
 
-// Wire declarations
-//wire PCWrite;
-wire [31:0] PCNext, OldPC, Adr;
-wire [31:0] Instr, InstrReg, ReadData, Data;
+// Internal wire declarations
+wire [31:0] OldPC, Adr;
+wire [31:0] InstrReg, Data; // ReadData, Removed so that Memory is outside CPU
 wire [31:0] RD1, RD2, A, WriteData;
 wire [31:0] ImmExt;
 wire [31:0] SrcA, SrcB;
 wire [31:0] ALUResult, ALUOut;
-//wire [2:0] ALUControl;
 
-// Module instantiations
-ff_en pcreg(.clk(clk), .en(PCWrite), .d(Result), .q(PC));
-ff_en pcnextreg(.clk(clk), .en(IRWrite), .d(PC), .q(OldPC));
+// PC and OldPC registers
+ff_en pcreg       (.clk(clk), .en(PCWrite), .d(Result), .q(PC));
+ff_en pcnextreg   (.clk(clk), .en(IRWrite), .d(PC),     .q(OldPC));
 
-mux2 pc_mux(.d0(PC), .d1(Result), .sel(AdrSrc), .op(Adr));
+// Address MUX for memory access
+mux2 pc_mux       (.d0(PC), .d1(Result), .sel(AdrSrc), .op(Adr));
 
-Instr_Data_mem memory(.clk(clk), .MemWrite(MemWrite), .A(PC), .WD(WriteData), 
-.Instr(Instr), .RD(ReadData));
+// Memory block
+//Instr_Data_mem memory (
+//    .clk(clk), .MemWrite(MemWrite),
+//    .A(PC), .WD(WriteData),
+//    .RD(ReadData)
+//);
 
-ff_en instreg(.clk(clk), .en(IRWrite), .d(Instr), .q(InstrReg));
-ff readData(.clk(clk), .reset(reset), .d(ReadData), .q(Data));
+// Instruction Register
+ff_en instreg     (.clk(clk), .en(IRWrite), .d(Mem_RdData), .q(InstrReg));
+ff    readData    (.clk(clk), .reset(reset), .d(Mem_RdData), .q(Data));
 
-Register regfile(.clk(clk), .WE3(RegWrite), .A1(InstrReg[19:15]), .A2(InstrReg[24:20]), .A3(InstrReg[11:7]),
-.WD3(Result), .RD1(RD1), .RD2(RD2));
+// Register File
+Register regfile (
+    .clk(clk), .WE3(RegWrite),
+    .A1(InstrReg[19:15]), .A2(InstrReg[24:20]), .A3(InstrReg[11:7]),
+    .WD3(Result), .RD1(RD1), .RD2(RD2)
+);
 
-Extend ext(.instr(InstrReg[31:7]), .ImmSrc(ImmSrc), .immext(ImmExt));
+// Immediate Generator
+Extend ext (
+    .instr(InstrReg[31:7]), .ImmSrc(ImmSrc), .immext(ImmExt)
+);
 
-ff regfile_A(.clk(clk), .reset(reset), .d(RD1), .q(A));
-ff regfile_Write_data(.clk(clk), .reset(reset), .d(RD2), .q(WriteData));
+// Registering operands
+ff regfile_A            (.clk(clk), .reset(reset), .d(RD1),      .q(A));
+ff regfile_Write_data   (.clk(clk), .reset(reset), .d(RD2),      .q(WriteData));
 
-mux4 ALUSrcA_mux_3(.d0(PC), .d1(OldPC), .d2(A), .d3(2'b11), .sel(ALUSrcA), .op(SrcA));
+// ALU input MUXes
+mux4 ALUSrcA_mux_3      (.d0(PC), .d1(OldPC), .d2(A),         .d3(32'b11), .sel(ALUSrcA), .op(SrcA));
+mux4 ALUSrcB_mux        (.d0(WriteData), .d1(ImmExt), .d2(32'd4), .d3(32'b11), .sel(ALUSrcB), .op(SrcB));
 
-mux4 ALUSrcB_mux(.d0(WriteData), .d1(ImmExt), .d2(31'd4), .d3(32'b11), .sel(ALUSrcB), .op(SrcB));
+// ALU
+alu ALU (
+    .SrcA(SrcA), .SrcB(SrcB),
+    .ALUControl(ALUControl),
+    .Zero(Zero), .ALUResult(ALUResult)
+);
 
-alu ALU(.SrcA(SrcA), .SrcB(SrcB), .ALUControl(ALUControl), .Zero(Zero), .ALUResult(ALUResult));
+// ALU result register
+ff alu_result           (.clk(clk), .reset(reset), .d(ALUResult), .q(ALUOut));
 
-ff alu_result(.clk(clk), .reset(reset), .d(ALUResult), .q(ALUOut));
+// Result multiplexer
+mux4 ResultSrc_mux      (.d0(ALUOut), .d1(Data), .d2(ALUResult), .d3(32'b0),
+                         .sel(ResultSrc), .op(Result));
 
-mux4 ResultSrc_mux(.d0(ALUOut), .d1(ReadData), .d2(PC), .d3(2'b11), .sel(ResultSrc), .op(Result));
-
-assign Mem_WrAddr = ALUOut;
+// Assign memory interface outputs
+assign Mem_WrAddr = Adr;
 assign Mem_WrData = WriteData;
+assign func7b5 = InstrReg[30];
+assign func3 = InstrReg[14:12];
+assign op = InstrReg[6:0];
 
 endmodule
-// module Extend(
-//     input [31:7] instr,
-//     input [2:0]ImmSrc,
-//     output reg  [31:0]immext
-// );
