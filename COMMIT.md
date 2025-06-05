@@ -100,5 +100,12 @@ git config --global core.editor "nano"
 For Visual Studio Code:
 ```
 git config --global core.editor "code --wait"
+
+For Visual Studio Code:
 ```
+git config --global core.editor "notepad"
+
+```
+
+
 ---
