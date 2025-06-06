@@ -9,6 +9,13 @@ module Controller(
     output [2:0] ALUControl,
     output [2:0] ImmSrc,
     output reg   PCWrite
+    
+    // DEBUG
+    `ifdef DEBUG
+        ,output [1:0] debug_ALUOp,
+        output       debug_Branch,
+        output       debug_PCWrite
+    `endif
 );
 
 wire [1:0] ALUOp ;
@@ -50,5 +57,11 @@ alu_decoder alu_decoder(
    .ALUOp(ALUOp),
    .ALUControl(ALUControl)
 );
+
+`ifdef DEBUG
+    assign debug_ALUOp = ALUOp;
+    assign debug_Branch = Branch;
+    assign debug_PCWrite = PCWrite;
+`endif
 
 endmodule

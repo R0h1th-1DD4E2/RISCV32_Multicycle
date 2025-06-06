@@ -14,6 +14,17 @@ module Datapath (
     output [2:0]  func3,
     output [6:0]  op,
     output [31:0] Mem_WrAddr, Mem_WrData, Result
+    
+    //DEBUG
+    `ifdef DEBUG
+        ,output [31:0] debug_InstrReg,
+        output [31:0] debug_RD1, debug_RD2,
+        output [31:0] debug_ImmExt,
+        output [31:0] debug_SrcA, debug_SrcB,
+        output [31:0] debug_ALUResult, debug_ALUOut,
+        output [31:0] debug_A, debug_WriteData,
+        output [31:0] debug_OldPC
+    `endif
 );
 
 // Internal wire declarations
@@ -84,5 +95,19 @@ assign Mem_WrData = WriteData;
 assign func7b5 = InstrReg[30];
 assign func3 = InstrReg[14:12];
 assign op = InstrReg[6:0];
+
+`ifdef DEBUG
+    assign debug_InstrReg = InstrReg;
+    assign debug_RD1 = RD1;
+    assign debug_RD2 = RD2;
+    assign debug_ImmExt = ImmExt;
+    assign debug_SrcA = SrcA;
+    assign debug_SrcB = SrcB;
+    assign debug_ALUResult = ALUResult;
+    assign debug_ALUOut = ALUOut;
+    assign debug_A = A;
+    assign debug_WriteData = WriteData;
+    assign debug_OldPC = OldPC;
+`endif
 
 endmodule
