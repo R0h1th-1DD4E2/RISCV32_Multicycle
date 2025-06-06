@@ -7,6 +7,9 @@ module Datapath (
     input  [31:0] Mem_RdData,
     output [31:0] PC,
     output        Zero,
+    output        Negative,
+    output        Carry,
+    output        Overflow,
     output        func7b5,
     output [2:0]  func3,
     output [6:0]  op,
@@ -63,7 +66,9 @@ mux4 ALUSrcB_mux        (.d0(WriteData), .d1(ImmExt), .d2(32'd4), .d3(32'b11), .
 alu ALU (
     .SrcA(SrcA), .SrcB(SrcB),
     .ALUControl(ALUControl),
-    .Zero(Zero), .ALUResult(ALUResult)
+    .Zero(Zero), .Negative(Negative),
+    .Carry(Carry), .Overflow(Overflow), 
+    .ALUResult(ALUResult)
 );
 
 // ALU result register

@@ -9,6 +9,8 @@ module CPU_rv32i (
 
 // Internal wire
 wire MW, Zero;
+wire Negative, Carry;
+wire Overflow;
 wire RegWrite, IRWrite, AdrSrc, PCWrite, func7b5;
 wire [1:0] ResultSrc, ALUSrcA, ALUSrcB;
 wire [2:0] ImmSrc, func3;
@@ -22,6 +24,9 @@ Controller Control_unit (
     .funct3(func3),
     .funct7b5(func7b5),
     .Zero(Zero),
+    .Negative(Negative),
+    .Carry(Carry), 
+    .Overflow(Overflow), 
     .clk(clk),
     .reset(reset),
     .MemWrite(MW),
@@ -52,6 +57,9 @@ Datapath datapath (
     .Mem_RdData(Mem_RdData),
     .PC(PC),
     .Zero(Zero),
+    .Negative(Negative),
+    .Carry(Carry), 
+    .Overflow(Overflow), 
     .func7b5(func7b5),
     .func3(func3),
     .op(op),
