@@ -11,9 +11,9 @@ module Main_FSM (
     output reg [1:0]  ResultSrc,
     output reg [1:0]  ALUSrcA,
     output reg [1:0]  ALUSrcB,
-    output reg [1:0]  Branch,
+    output reg        Branch,
     output reg [1:0]  ALUOp,
-    output reg [1:0]  ImmSrc   // Changed to 2 bits
+    output reg [2:0]  ImmSrc   // Changed to 2 bits
 );
 
 
@@ -47,7 +47,7 @@ always @(*) begin
             MemWrite   = 1'b0;
             RegWrite   = 1'b0;
             Branch     = 1'b0;
-            ImmSrc     = 2'b10;          
+            ImmSrc     = 3'b010;          
         end
 
         S1_decode: begin
@@ -60,14 +60,14 @@ always @(*) begin
             AdrSrc     = 1'b0;
             PCUpdate   = 1'b0;
             Branch     = 1'b0;
-            ImmSrc     = 2'b00;
+            ImmSrc     = 3'b000;
             ResultSrc  = 2'b00;
         end
 
         S2_MemAdr: begin
             ALUSrcA    = 2'b10;
             ALUSrcB    = 2'b01;
-            ImmSrc=op[5]?2'b01:2'b00; // Determine immediate source based on opcode // Default case
+            ImmSrc=op[5]?3'b001:3'b000; // Determine immediate source based on opcode // Default case
             ImmSrc     = 2'b00;
             ALUOp      = 2'b00;
             MemWrite   = 1'b0;
@@ -89,7 +89,7 @@ always @(*) begin
             ALUOp      = 2'b00;
             ALUSrcA    = 2'b00;
             Branch     = 1'b0;
-            ImmSrc     = 2'b00;
+            ImmSrc     = 3'b000;
             ALUSrcB    = 2'b00;
         end
 
@@ -102,7 +102,7 @@ always @(*) begin
             PCUpdate   = 1'b0;
             ALUOp      = 2'b00;
             ALUSrcA    = 2'b00;
-            Branch     = 1'b01;
+            Branch     = 1'b0;
             ImmSrc     = 2'b00;
             ALUSrcB    = 2'b00;
         end
@@ -117,7 +117,7 @@ always @(*) begin
             ALUOp      = 2'b00;
             ALUSrcA    = 2'b00;
             Branch     = 1'b0;
-            ImmSrc     = 2'b00;
+            ImmSrc     = 3'b000;
             ALUSrcB    = 2'b00;
         end
 
@@ -131,7 +131,7 @@ always @(*) begin
             AdrSrc     = 1'b0;
             PCUpdate   = 1'b0;
             Branch     = 1'b0;
-            ImmSrc     = 2'b00;
+            ImmSrc     = 3'b000;
             ResultSrc  = 2'b00;
         end
 
@@ -145,7 +145,7 @@ always @(*) begin
             ALUOp      = 2'b00;
             ALUSrcA    = 2'b00;
             Branch     = 1'b0;
-            ImmSrc     = 2'b00;
+            ImmSrc     = 3'b000;
             ALUSrcB    = 2'b00;
         end
 
@@ -159,7 +159,7 @@ always @(*) begin
             AdrSrc     = 1'b0;
             PCUpdate   = 1'b0;
             Branch     = 1'b0;
-            ImmSrc     = 2'b00;
+            ImmSrc     = 3'b000;
             ResultSrc  = 2'b00;
         end
 
@@ -174,21 +174,21 @@ always @(*) begin
             IRWrite    = 1'b0;
             AdrSrc     = 1'b0;
             Branch     = 1'b0;
-            ImmSrc     = 2'b11;
+            ImmSrc     = 3'b011;
         end
 
         S10_BRANCH: begin
             ALUSrcA    = 2'b10;
             ALUSrcB    = 2'b00;
             ALUOp      = 2'b01;
-            Branch     = 2'b10;
+            Branch     = 1'b1;
             ResultSrc  = 2'b00;
             MemWrite   = 1'b0;
             RegWrite   = 1'b0;
             IRWrite    = 1'b0;
             AdrSrc     = 1'b0;
             PCUpdate   = 1'b0;
-            ImmSrc     = 2'b00;
+            ImmSrc     = 3'b000;
         end
 
         default: begin
@@ -200,7 +200,7 @@ always @(*) begin
             ResultSrc  = 2'b00;
             ALUSrcA    = 2'b00;
             ALUSrcB    = 2'b00;
-            ImmSrc     = 2'b00;
+            ImmSrc     = 3'b000;
             Branch     = 1'b0;
             ALUOp      = 2'b00;
         end
