@@ -36,8 +36,8 @@ wire [31:0] SrcA, SrcB;
 wire [31:0] ALUResult, ALUOut;
 
 // PC and OldPC registers
-ff_en pcreg       (.clk(clk), .en(PCWrite), .d(Result), .q(PC));
-ff_en pcnextreg   (.clk(clk), .en(IRWrite), .d(PC),     .q(OldPC));
+ff_en pcreg       (.clk(clk), .en(PCWrite), .reset(reset), .d(Result), .q(PC));
+ff_en pcnextreg   (.clk(clk), .en(IRWrite), .reset(reset), .d(PC),     .q(OldPC));
 
 // Address MUX for memory access
 mux2 pc_mux       (.d0(PC), .d1(Result), .sel(AdrSrc), .op(Adr));
@@ -50,7 +50,7 @@ mux2 pc_mux       (.d0(PC), .d1(Result), .sel(AdrSrc), .op(Adr));
 //);
 
 // Instruction Register
-ff_en instreg     (.clk(clk), .en(IRWrite), .d(Mem_RdData), .q(InstrReg));
+ff_en instreg     (.clk(clk), .en(IRWrite), .reset(reset), .d(Mem_RdData), .q(InstrReg));
 ff    readData    (.clk(clk), .reset(reset), .d(Mem_RdData), .q(Data));
 
 // Register File
