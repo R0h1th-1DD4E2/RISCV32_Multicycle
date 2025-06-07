@@ -28,7 +28,7 @@ parameter [3:0]
     S7_ALUWB     = 4'b0111,
     S8_ExecuteI  = 4'b1000,
     S9_JAL       = 4'b1001,
-    S10_BEQ      = 4'b1010;
+    S10_BRANCH   = 4'b1010;
 
 
 reg [3:0] present_state, next_state;
@@ -67,8 +67,7 @@ always @(*) begin
         S2_MemAdr: begin
             ALUSrcA    = 2'b10;
             ALUSrcB    = 2'b01;
-            ImmSrc=op[5]?3'b001:3'b000; // Determine immediate source based on opcode // Default case
-            ImmSrc     = 2'b00;
+            ImmSrc     = op[5] ? 3'b001 : 3'b000;
             ALUOp      = 2'b00;
             MemWrite   = 1'b0;
             RegWrite   = 1'b0;
@@ -87,10 +86,10 @@ always @(*) begin
             IRWrite    = 1'b0;
             PCUpdate   = 1'b0;
             ALUOp      = 2'b00;
-            ALUSrcA    = 2'b00;
+            ALUSrcA    = 2'b10;
             Branch     = 1'b0;
             ImmSrc     = 3'b000;
-            ALUSrcB    = 2'b00;
+            ALUSrcB    = 2'b01;
         end
 
         S4_MemWB: begin
@@ -101,10 +100,10 @@ always @(*) begin
             AdrSrc     = 1'b0;
             PCUpdate   = 1'b0;
             ALUOp      = 2'b00;
-            ALUSrcA    = 2'b00;
+            ALUSrcA    = 2'b10;
             Branch     = 1'b0;
-            ImmSrc     = 2'b00;
-            ALUSrcB    = 2'b00;
+            ImmSrc     = 3'b000;
+            ALUSrcB    = 2'b01;
         end
 
         S5_MemWrite: begin
@@ -117,7 +116,7 @@ always @(*) begin
             ALUOp      = 2'b00;
             ALUSrcA    = 2'b00;
             Branch     = 1'b0;
-            ImmSrc     = 3'b000;
+            ImmSrc     = 3'b001;
             ALUSrcB    = 2'b00;
         end
 
@@ -217,7 +216,7 @@ always @(*) begin
             case (op)
                 7'b0000011, 7'b0100011: next_state = S2_MemAdr;    // lw or sw
                 7'b0110011: next_state = S6_ExecuteR;  // R-type
-                7'b1100011: next_state = S10_BEQ;      // beq
+                7'b1100011: next_state = S10_BRANCH;      // beq
                 7'b0010011: next_state = S8_ExecuteI;  // addi
                 7'b1101111: next_state = S9_JAL;       // jal
                 default:    next_state = S1_decode;    // Stay in decode for undefined opcodes
@@ -239,7 +238,7 @@ always @(*) begin
         S7_ALUWB:      next_state = S0_fetch;
         S8_ExecuteI:   next_state = S7_ALUWB;
         S9_JAL:        next_state = S7_ALUWB;
-        S10_BEQ:       next_state = S0_fetch;
+        S10_BRANCH:       next_state = S0_fetch;
 
         default:       next_state = S0_fetch;   // Default to fetch state for safety
     endcase

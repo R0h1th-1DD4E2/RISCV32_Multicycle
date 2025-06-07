@@ -5,10 +5,10 @@ module ff(
 );
     
     always @(posedge clk or posedge reset ) begin
-        if (reset==0)
-            q <= d;
+        if (reset == 1)
+            q <= 0;
         else
-            q <= q;
+            q <= d;
         
     end
 endmodule
