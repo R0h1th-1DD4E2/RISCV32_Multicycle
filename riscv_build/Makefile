@@ -1,4 +1,4 @@
-# RISC-V32I Makefile for Multicycle Core Testing
+# RISC-V32I Makefile for Multicycle Core Testing - FIXED VERSION
 # Supports both Assembly and C programs
 
 # Toolchain configuration
@@ -17,7 +17,8 @@ ABI = ilp32
 # Compiler flags for multicycle core
 CFLAGS = -march=$(ARCH) -mabi=$(ABI) -O2 -nostdlib -nostartfiles -ffreestanding
 ASFLAGS = -march=$(ARCH) -mabi=$(ABI)
-LDFLAGS = -T linker.ld -nostdlib
+# Updated LDFLAGS - use gcc for linking instead of ld directly
+LDFLAGS = -T linker.ld -nostdlib -nostartfiles
 
 # ROM size for multicycle core (typically 4KB-16KB)
 ROM_SIZE = 8192  # 8KB ROM - good size for multicycle core testing
@@ -38,8 +39,9 @@ test_c: program_c.hex program_c.bin program_c.mem
 program_asm.o: program.s
 	$(AS) $(ASFLAGS) -o $@ $<
 
+# FIXED: Use gcc for linking instead of ld directly
 program_asm.elf: program_asm.o
-	$(LD) $(LDFLAGS) -o $@ program_asm.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ program_asm.o
 
 # C program build rules
 program_c.o: program.c
@@ -48,8 +50,9 @@ program_c.o: program.c
 crt0.o: crt0.s
 	$(AS) $(ASFLAGS) -o $@ $<
 
+# FIXED: Use gcc for linking instead of ld directly
 program_c.elf: program_c.o crt0.o
-	$(LD) $(LDFLAGS) -o $@ crt0.o program_c.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ crt0.o program_c.o
 
 # Generate hex files (Intel HEX format)
 %.hex: %.elf
@@ -119,9 +122,6 @@ verify_c: program_c.bin
 	@echo "Hex dump (first 64 bytes):"
 	@hexdump -C program_c.bin | head -4
 
-# Generate linker script dynamically
-generate_files: linker.ld crt0.s program.s program.c
-
 # Clean targets
 clean:
 	rm -f *.o *.elf *.hex *.bin *.mem *.dis *.sym
@@ -153,4 +153,4 @@ help:
 	@echo "  *.bin - Raw binary"
 	@echo "  *.mem - Verilog memory format"
 
-.PHONY: all test_asm test_c analyze_asm analyze_c verify verify_asm verify_c clean distclean help generate_files
+.PHONY: all test_asm test_c analyze_asm analyze_c verify verify_asm verify_c clean distclean help
