@@ -63,7 +63,7 @@ Controller Control_unit (
     .RegWrite(RegWrite),
     .IRWrite(IRWrite),
     .AdrSrc(AdrSrc),
-    .PCUpdate(PCWrite),
+    .PCWrite(PCWrite),
     .ResultSrc(ResultSrc),
     .ALUSrcA(ALUSrcA),
     .ALUSrcB(ALUSrcB),

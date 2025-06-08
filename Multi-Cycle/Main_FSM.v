@@ -60,7 +60,7 @@ always @(*) begin
             AdrSrc     = 1'b0;
             PCUpdate   = 1'b0;
             Branch     = 1'b0;
-            ImmSrc     = 3'b000;
+            ImmSrc     = (op == 7'h6f) ? 3'b011 : 3'b000;
             ResultSrc  = 2'b00;
         end
 
@@ -187,7 +187,7 @@ always @(*) begin
             IRWrite    = 1'b0;
             AdrSrc     = 1'b0;
             PCUpdate   = 1'b0;
-            ImmSrc     = 3'b000;
+            ImmSrc     = 3'b010;
         end
 
         default: begin
