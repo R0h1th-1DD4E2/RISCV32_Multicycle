@@ -73,7 +73,7 @@ module tb_new;
   
   // Fetch logic (read-only)
   always_comb begin
-    Mem_RdData = imem[PC[9:2]]; // Word-aligned 32-bit instructions
+    Mem_RdData = imem[Mem_WrAddr[9:2]]; // Word-aligned 32-bit instructions
   end
   
     always @(posedge clk) begin
