@@ -1,5 +1,5 @@
-# RISC-V32I Makefile for Multicycle Core Testing - FIXED VERSION
-# Supports both Assembly and C programs
+# RISC-V32I Makefile for Multicycle Core Testing
+# Supports both Assembly and C programs with generic compilation
 
 # Toolchain configuration
 PREFIX = riscv64-unknown-elf-
@@ -17,62 +17,76 @@ ABI = ilp32
 # Compiler flags for multicycle core
 CFLAGS = -march=$(ARCH) -mabi=$(ABI) -O2 -nostdlib -nostartfiles -ffreestanding
 ASFLAGS = -march=$(ARCH) -mabi=$(ABI)
-# Updated LDFLAGS - use gcc for linking instead of ld directly
 LDFLAGS = -T linker.ld -nostdlib -nostartfiles
 
-# ROM size for multicycle core (typically 4KB-16KB)
-ROM_SIZE = 8192  # 8KB ROM - good size for multicycle core testing
+# ROM size for multicycle core validation
+ROM_SIZE = 8192
 
-# Default target
+# Default targets
 all: test_asm test_c
 
-# Assembly program targets
-test_asm: program_asm.hex program_asm.bin program_asm.mem
+test_asm: program_asm.hex program_asm.bin program_asm.mem program_asm.map
 	@echo "Assembly program built successfully"
 	@$(SIZE) program_asm.elf
 
-test_c: program_c.hex program_c.bin program_c.mem
+test_c: program_c.hex program_c.bin program_c.mem program_c.map
 	@echo "C program built successfully"
 	@$(SIZE) program_c.elf
 
-# Assembly program build rules
+# Specific program build rules
 program_asm.o: program.s
 	$(AS) $(ASFLAGS) -o $@ $<
 
-# FIXED: Use gcc for linking instead of ld directly
 program_asm.elf: program_asm.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ program_asm.o
 
-# C program build rules
 program_c.o: program.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 crt0.o: crt0.s
 	$(AS) $(ASFLAGS) -o $@ $<
 
-# FIXED: Use gcc for linking instead of ld directly
 program_c.elf: program_c.o crt0.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ crt0.o program_c.o
 
-# Generate hex files (Intel HEX format)
+# Generic compilation rules for any program
+%.o: %.s
+	$(AS) $(ASFLAGS) -o $@ $<
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+# Assembly program linking
+%.elf: %.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
+
+# C program linking (requires crt0.o)
+%_c.elf: %.o crt0.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ crt0.o $<
+
+# Output format generation
 %.hex: %.elf
 	$(OBJCOPY) -O ihex $< $@
 
-# Generate binary files
 %.bin: %.elf
 	$(OBJCOPY) -O binary $< $@
 
-# Generate memory files for Verilog simulation
 %.mem: %.bin
 	xxd -ps -c 4 $< | sed 's/\(..\)\(..\)\(..\)\(..\)/\4\3\2\1/' > $@
 
-# Generate disassembly for debugging
+%.map: %.elf
+	$(OBJDUMP) -h $< > $@
+
 %.dis: %.elf
 	$(OBJDUMP) -d $< > $@
 
-# Generate symbol table
 %.sym: %.elf
 	$(OBJDUMP) -t $< > $@
+
+# Convenience target for complete program build
+%_all: %.hex %.bin %.mem %.map %.dis
+	@echo "$* program built in all formats"
+	@$(SIZE) $*.elf
 
 # Analysis targets
 analyze_asm: program_asm.dis program_asm.sym
@@ -93,7 +107,7 @@ analyze_c: program_c.dis program_c.sym
 	@echo "\nFirst 16 instructions:"
 	@head -20 program_c.dis
 
-# Verification targets
+# ROM size verification
 verify: verify_asm verify_c
 
 verify_asm: program_asm.bin
@@ -101,7 +115,7 @@ verify_asm: program_asm.bin
 	@SIZE_BYTES=$$(stat -c%s program_asm.bin); \
 	echo "Binary size: $$SIZE_BYTES bytes"; \
 	if [ $$SIZE_BYTES -gt $(ROM_SIZE) ]; then \
-		echo "ERROR: Program too large for $(ROM_SIZE) byte ROM!"; \
+		echo "ERROR: Program exceeds $(ROM_SIZE) byte ROM limit"; \
 		exit 1; \
 	else \
 		echo "OK: Program fits in $(ROM_SIZE) byte ROM"; \
@@ -114,7 +128,7 @@ verify_c: program_c.bin
 	@SIZE_BYTES=$$(stat -c%s program_c.bin); \
 	echo "Binary size: $$SIZE_BYTES bytes"; \
 	if [ $$SIZE_BYTES -gt $(ROM_SIZE) ]; then \
-		echo "ERROR: Program too large for $(ROM_SIZE) byte ROM!"; \
+		echo "ERROR: Program exceeds $(ROM_SIZE) byte ROM limit"; \
 		exit 1; \
 	else \
 		echo "OK: Program fits in $(ROM_SIZE) byte ROM"; \
@@ -122,35 +136,35 @@ verify_c: program_c.bin
 	@echo "Hex dump (first 64 bytes):"
 	@hexdump -C program_c.bin | head -4
 
-# Clean targets
+# Cleanup
 clean:
-	rm -f *.o *.elf *.hex *.bin *.mem *.dis *.sym
+	rm -f *.o *.elf *.hex *.bin *.mem *.dis *.sym *.map
 
-distclean: clean
-	rm -f linker.ld crt0.s program.s program.c
-
-# Help target
+# Usage information
 help:
 	@echo "RISC-V32I Makefile for Multicycle Core"
 	@echo "======================================"
-	@echo "Targets:"
-	@echo "  all         - Build both assembly and C programs"
-	@echo "  test_asm    - Build assembly program"
-	@echo "  test_c      - Build C program"
-	@echo "  analyze_asm - Analyze assembly program"
-	@echo "  analyze_c   - Analyze C program"
-	@echo "  verify      - Verify both programs fit in ROM"
-	@echo "  clean       - Remove build files"
-	@echo "  distclean   - Remove all generated files"
+	@echo "Standard targets:"
+	@echo "  all           - Build default programs"
+	@echo "  test_asm      - Build assembly program"
+	@echo "  test_c        - Build C program"
+	@echo "  verify        - Verify ROM size compliance"
+	@echo "  clean         - Remove build artifacts"
+	@echo ""
+	@echo "Generic compilation (any program):"
+	@echo "  make <name>.hex    - Assembly: <name>.s -> Intel HEX"
+	@echo "  make <name>.bin    - Assembly: <name>.s -> Binary"
+	@echo "  make <name>.mem    - Assembly: <name>.s -> Verilog memory"
+	@echo "  make <name>_c.hex  - C: <name>.c -> Intel HEX"
+	@echo "  make <name>_all    - Build all formats for <name>.s"
+	@echo ""
+	@echo "Analysis:"
+	@echo "  make <name>.dis    - Generate disassembly"
+	@echo "  make <name>.map    - Generate memory map"
+	@echo "  make <name>.sym    - Generate symbol table"
 	@echo ""
 	@echo "Configuration:"
 	@echo "  ROM_SIZE = $(ROM_SIZE) bytes"
-	@echo "  ARCH = $(ARCH)"
-	@echo "  ABI = $(ABI)"
-	@echo ""
-	@echo "Output files:"
-	@echo "  *.hex - Intel HEX format (for most tools)"
-	@echo "  *.bin - Raw binary"
-	@echo "  *.mem - Verilog memory format"
+	@echo "  ARCH = $(ARCH), ABI = $(ABI)"
 
-.PHONY: all test_asm test_c analyze_asm analyze_c verify verify_asm verify_c clean distclean help
+.PHONY: all test_asm test_c analyze_asm analyze_c verify verify_asm verify_c clean help
