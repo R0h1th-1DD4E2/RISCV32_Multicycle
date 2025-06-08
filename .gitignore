@@ -1,1 +1,9 @@
 .nvim
+*.o 
+*.elf 
+*.hex 
+*.bin 
+*.mem 
+*.dis 
+*.sym 
+*.map
