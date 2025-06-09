@@ -214,7 +214,7 @@ always @(*) begin
 
         S1_decode: begin
             case (op)
-                7'b0000011, 7'b0100011: next_state = S2_MemAdr;    // lw or sw
+                7'b0000011, 7'b0100011, 7'b1100111: next_state = S2_MemAdr;    // lw or sw or jalr
                 7'b0110011: next_state = S6_ExecuteR;  // R-type
                 7'b1100011: next_state = S10_BRANCH;      // beq
                 7'b0010011: next_state = S8_ExecuteI;  // addi
@@ -227,6 +227,7 @@ always @(*) begin
             case (op)
                 7'b0000011: next_state = S3_MemRead;   // lw
                 7'b0100011: next_state = S5_MemWrite;  // sw
+                7'b1100111: next_state = S9_JAL;       // jalr
                 default:    next_state = S1_decode;    // Stay in decode for undefined opcodes
             endcase
         end
