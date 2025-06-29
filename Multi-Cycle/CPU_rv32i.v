@@ -19,7 +19,7 @@ module CPU_rv32i (
         output        debug_Branch,
         output        debug_PCWrite_condition,
         output        debug_Zero, debug_Negative, debug_Carry, debug_Overflow,
-        output [2:0]  debug_ALUControl,
+        output [3:0]  debug_ALUControl,
         output [1:0]  debug_ResultSrc, debug_ALUSrcA, debug_ALUSrcB
     `endif
 );
@@ -31,7 +31,7 @@ wire Overflow;
 wire RegWrite, IRWrite, AdrSrc, PCWrite, func7b5;
 wire [1:0] ResultSrc, ALUSrcA, ALUSrcB;
 wire [2:0] ImmSrc, func3;
-wire [2:0] ALUControl;
+wire [3:0] ALUControl;
 wire [6:0] op;
 
 // Debug wires

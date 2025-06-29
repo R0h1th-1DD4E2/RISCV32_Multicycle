@@ -1,88 +1,52 @@
-# RISC-V32I Fibonacci Series Program (n=10)
-# Calculates first 10 Fibonacci numbers and stores them in safe memory location
 .section .text
 .globl _start
+
 _start:
-    # Initialize base address for data storage (safe location after program)
-    la  x5, data_section    # x5 = address of data_section (safe location)
-    
-    # Initialize Fibonacci variables
-    add x1, x0, x0          # x1 = 0 (F(0))
-    addi x2, x0, 1          # x2 = 1 (F(1))
-    
-    # Store first two Fibonacci numbers
-    sw  x1, 0(x5)           # Store F(0) = 0 at data_section
-    sw  x2, 4(x5)           # Store F(1) = 1 at data_section + 4
-    
-    # Initialize counter and loop variables
-    addi x3, x0, 2          # x3 = 2 (counter, starting from F(2))
-    addi x4, x0, 10         # x4 = 10 (target count)
-    addi x6, x0, 8          # x6 = 8 (memory offset, starting at data_section + 8)
-    
-fib_loop:
-    # Check if we've calculated n numbers
-    sub x7, x3, x4          # x7 = counter - target
-    beq x7, x0, end_fib     # If counter == target, exit loop
-    
-    # Calculate next Fibonacci number
-    add x8, x1, x2          # x8 = F(n-2) + F(n-1) = F(n)
-    
-    # Store current Fibonacci number
-    add x9, x5, x6          # x9 = data_section + offset
-    sw  x8, 0(x9)           # Store F(n) at current address
-    
-    # Update for next iteration
-    add x1, x2, x0          # x1 = previous F(n-1) becomes new F(n-2)
-    add x2, x8, x0          # x2 = current F(n) becomes new F(n-1)
-    addi x3, x3, 1          # Increment counter
-    addi x6, x6, 4          # Move to next memory location (4 bytes)
-    
-    jal x0, fib_loop        # Jump back to loop
-    
-end_fib:
-    # Display results by loading them back (optional verification)
-    # Load and display first few Fibonacci numbers from safe location
-    lw  x10, 0(x5)          # Load F(0) from data_section
-    lw  x11, 4(x5)          # Load F(1) from data_section + 4
-    lw  x12, 8(x5)          # Load F(2) from data_section + 8
-    lw  x13, 12(x5)         # Load F(3) from data_section + 12
-    lw  x14, 16(x5)         # Load F(4) from data_section + 16
-    
-    # Infinite loop to end program
-halt:
-    jal x0, halt            # Infinite loop
 
-.section .data
-data_section:
-    # Reserve space for 10 Fibonacci numbers in safe memory location
-    .word 0x00000000        # Space for F(0)
-    .word 0x00000000        # Space for F(1)
-    .word 0x00000000        # Space for F(2)
-    .word 0x00000000        # Space for F(3)
-    .word 0x00000000        # Space for F(4)
-    .word 0x00000000        # Space for F(5)
-    .word 0x00000000        # Space for F(6)
-    .word 0x00000000        # Space for F(7)
-    .word 0x00000000        # Space for F(8)
-    .word 0x00000000        # Space for F(9)
+# --------- Initialization (addi) ---------
+0x00000004:  00f00093   addi  x1,  x0, 15       # x1 = 15
+0x00000008:  ffd00113   addi  x2,  x0, -3       # x2 = -3
+0x0000000C:  00700193   addi  x3,  x0, 7        # x3 = 7
+0x00000010:  00100213   addi  x4,  x0, 1        # x4 = 1
 
-# Alternative approach using immediate address (if you know the memory layout):
-# You could also replace 'la x5, data_section' with:
-# lui x5, 0x10000         # Load upper immediate (example: 0x10000000)
-# This would place data at address 0x10000000, far from program code
+# --------- ADD / ADDI ----------
+0x00000014:  002082b3   add   x5,  x1, x2       # x5 = 15 + (-3) = 12
+0x00000018:  ffb08313   addi  x6,  x1, -5       # x6 = 15 + (-5) = 10
 
-# Expected Fibonacci sequence for n=10:
-# F(0) = 0, F(1) = 1, F(2) = 1, F(3) = 2, F(4) = 3
-# F(5) = 5, F(6) = 8, F(7) = 13, F(8) = 21, F(9) = 34
+# --------- SUB ----------
+0x0000001C:  402083b3   sub   x7,  x1, x2       # x7 = 15 - (-3) = 18
 
-# Memory layout after execution (starting at data_section address):
-# data_section + 0x00: 0x00000000 (F(0) = 0)
-# data_section + 0x04: 0x00000001 (F(1) = 1)
-# data_section + 0x08: 0x00000001 (F(2) = 1)
-# data_section + 0x0C: 0x00000002 (F(3) = 2)
-# data_section + 0x10: 0x00000003 (F(4) = 3)
-# data_section + 0x14: 0x00000005 (F(5) = 5)
-# data_section + 0x18: 0x00000008 (F(6) = 8)
-# data_section + 0x1C: 0x0000000D (F(7) = 13)
-# data_section + 0x20: 0x00000015 (F(8) = 21)
-# data_section + 0x24: 0x00000022 (F(9) = 34)
+# --------- AND / ANDI ----------
+0x00000020:  0030f433   and   x8,  x1, x3       # x8 = 15 & 7 = 7
+0x00000024:  0050f493   andi  x9,  x1, 5        # x9 = 15 & 5 = 5
+
+# --------- OR / ORI ----------
+0x00000028:  0030e533   or    x10, x1, x3       # x10 = 15 | 7 = 15
+0x0000002C:  0020e593   ori   x11, x1, 2        # x11 = 15 | 2 = 15
+
+# --------- XOR / XORI ----------
+0x00000030:  0030c633   xor   x12, x1, x3       # x12 = 15 ^ 7 = 8
+0x00000034:  0050c693   xori  x13, x1, 5        # x13 = 15 ^ 5 = 10
+
+# --------- SLT / SLTI ----------
+0x00000038:  00112733   slt   x14, x2, x1       # x14 = (-3 < 15) = 1
+0x0000003C:  00012793   slti  x15, x2, 0        # x15 = (-3 < 0) = 1
+
+# --------- SLTU / SLTIU ----------
+0x00000040:  00113833   sltu  x16, x2, x1       # x16 = 0 (unsigned)
+0x00000044:  00113893   sltiu x17, x2, 1        # x17 = 0 (unsigned)
+
+# --------- SLL / SLLI ----------
+0x00000048:  00409933   sll   x18, x1, x4       # x18 = 15 << 1 = 30
+0x0000004C:  00209993   slli  x19, x1, 2        # x19 = 15 << 2 = 60
+
+# --------- SRL / SRLI ----------
+0x00000050:  0040da33   srl   x20, x1, x4       # x20 = 15 >> 1 = 7
+0x00000054:  0020da93   srli  x21, x1, 2        # x21 = 15 >> 2 = 3
+
+# --------- SRA / SRAI ----------
+0x00000058:  40415b33   sra   x22, x2, x4       # x22 = -3 >> 1 = -2
+0x0000005C:  40215b93   srai  x23, x2, 2        # x23 = -3 >> 2 = -1
+
+# --------- Infinite Loop ----------
+0x00000060:  00001063   bne   x0, x0, 0         # loop forever

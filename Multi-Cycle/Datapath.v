@@ -3,7 +3,7 @@ module Datapath (
     input         RegWrite, IRWrite, AdrSrc, PCWrite,
     input  [1:0]  ResultSrc, ALUSrcA, ALUSrcB, 
     input  [2:0]  ImmSrc,
-    input  [2:0]  ALUControl,
+    input  [3:0]  ALUControl,
     input  [31:0] Mem_RdData,
     output [31:0] PC,
     output        Zero,

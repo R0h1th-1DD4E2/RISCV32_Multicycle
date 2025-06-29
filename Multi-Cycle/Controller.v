@@ -6,7 +6,7 @@ module Controller(
     input        funct7b5,
     output       MemWrite, RegWrite, IRWrite, AdrSrc, PCUpdate,
     output [1:0] ResultSrc, ALUSrcA, ALUSrcB,  
-    output [2:0] ALUControl,
+    output [3:0] ALUControl,
     output [2:0] ImmSrc,
     output reg   PCWrite
     
