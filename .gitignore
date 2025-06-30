@@ -7,3 +7,4 @@
 *.dis 
 *.sym 
 *.map
+*.sh

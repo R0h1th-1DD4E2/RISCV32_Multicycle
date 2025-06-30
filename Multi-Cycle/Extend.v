@@ -6,6 +6,7 @@ module Extend(
     always@(*)
     begin
         case(ImmSrc)
+        // I-type
         3'b000:   immext = {{20{instr[31]}}, instr[31:20]};
         // S−type (stores)
         3'b001:   immext = {{20{instr[31]}}, instr[31:25], instr[11:7]};

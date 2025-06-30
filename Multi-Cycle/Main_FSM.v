@@ -60,7 +60,13 @@ always @(*) begin
             AdrSrc     = 1'b0;
             PCUpdate   = 1'b0;
             Branch     = 1'b0;
-            ImmSrc     = (op == 7'h6f) ? 3'b011 : 3'b000;
+            // ImmSrc     = (op == 7'h6f) ? 3'b011 : 3'b000;
+            case(op)
+                7'h03 : ImmSrc = 3'b000;    // load I type
+                7'h63 : ImmSrc = 3'b010;    // B type
+                7'h6F : ImmSrc = 3'b011;    // J type
+                default : ImmSrc = 3'b000;
+            endcase
             ResultSrc  = 2'b00;
         end
 
