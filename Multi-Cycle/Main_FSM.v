@@ -28,7 +28,9 @@ parameter [3:0]
     S7_ALUWB     = 4'b0111,
     S8_ExecuteI  = 4'b1000,
     S9_JAL       = 4'b1001,
-    S10_BRANCH   = 4'b1010;
+    S10_BRANCH   = 4'b1010,
+    S11_LUI      = 4'b1011, // LUI state
+    S12_AUIPC    = 4'b1100; // AUIPC state
 
 
 reg [3:0] present_state, next_state;
@@ -62,9 +64,11 @@ always @(*) begin
             Branch     = 1'b0;
             // ImmSrc     = (op == 7'h6f) ? 3'b011 : 3'b000;
             case(op)
-                7'h03 : ImmSrc = 3'b000;    // load I type
-                7'h63 : ImmSrc = 3'b010;    // B type
-                7'h6F : ImmSrc = 3'b011;    // J type
+                7'b0000011 : ImmSrc = 3'b000;    // load I type
+                7'b0110011 : ImmSrc = 3'b010;    // B type
+                7'b1101111 : ImmSrc = 3'b011;    // J 
+                7'b0110111 : ImmSrc = 3'b100;    // LUI
+                7'b0010111 : ImmSrc = 3'b101;    // AUIPC
                 default : ImmSrc = 3'b000;
             endcase
             ResultSrc  = 2'b00;
@@ -196,6 +200,35 @@ always @(*) begin
             ImmSrc     = 3'b010;
         end
 
+    S11_LUI: begin
+        ALUSrcA    = 2'b11;    // Select 0 as ALU input A
+        ALUSrcB    = 2'b01;    // Select ImmExt as ALinput B
+        ALUOp      = 2'b00;    // ALU does addition (default op)
+        MemWrite   = 1'b0;     // No memory write
+        RegWrite   = 1'b1;     // Enable write to register file
+        IRWrite    = 1'b0;     // Do not update instruction register
+        AdrSrc     = 1'b0;     // Not relevant (not accessing memory)
+        PCUpdate   = 1'b0;     // PC not updated here
+        ResultSrc  = 2'b00;    // Select ALUResult to write to reg file
+        Branch     = 1'b0;     // Not a branch
+        ImmSrc     = 3'b100;   // LUI-specific immediate (20-bit upper shifted)
+    end
+
+    S12_AUIPC: begin
+        ALUSrcA=2'b01;
+        ALUSrcB=2'b01; // Select ImmExt as ALU input B
+        ALUOp=2'b00; // ALU does addition (default op)
+        MemWrite=1'b0; // No memory write
+        RegWrite=1'b1; // Enable write to register file 
+        IRWrite=1'b0; // Do not update instruction register
+        AdrSrc=1'b0; // Not relevant (not accessing memory) 
+        PCUpdate=1'b0; // PC not updated here
+        ResultSrc=2'b00; // Select ALUResult to write to reg file
+        Branch=1'b0; // Not a branch
+        ImmSrc=3'b100; // AUIPC-specific immediate (20-bit upper shifted)
+    end
+
+
         default: begin
             MemWrite   = 1'b0;
             RegWrite   = 1'b0;
@@ -225,6 +258,8 @@ always @(*) begin
                 7'b1100011: next_state = S10_BRANCH;      // beq
                 7'b0010011: next_state = S8_ExecuteI;  // addi
                 7'b1101111: next_state = S9_JAL;       // jal
+                7'b0110111: next_state = S11_LUI; // LUI
+                7'b0010111: next_state = S12_AUIPC; // AUIPC
                 default:    next_state = S1_decode;    // Stay in decode for undefined opcodes
             endcase
         end
@@ -233,7 +268,7 @@ always @(*) begin
             case (op)
                 7'b0000011: next_state = S3_MemRead;   // lw
                 7'b0100011: next_state = S5_MemWrite;  // sw
-                7'b1100111: next_state = S9_JAL;       // jalr
+                7'b1100111: next_state = S9_JAL; //jalr
                 default:    next_state = S1_decode;    // Stay in decode for undefined opcodes
             endcase
         end
@@ -245,8 +280,9 @@ always @(*) begin
         S7_ALUWB:      next_state = S0_fetch;
         S8_ExecuteI:   next_state = S7_ALUWB;
         S9_JAL:        next_state = S7_ALUWB;
-        S10_BRANCH:       next_state = S0_fetch;
-
+        S10_BRANCH:    next_state = S0_fetch;
+        S11_LUI:       next_state = S7_ALUWB; // LUI goes to ALU write back
+        S12_AUIPC:     next_state = S7_ALUWB; // AUIPC goes to ALU write back
         default:       next_state = S0_fetch;   // Default to fetch state for safety
     endcase
 end

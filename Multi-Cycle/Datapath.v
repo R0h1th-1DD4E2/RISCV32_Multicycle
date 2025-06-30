@@ -70,7 +70,7 @@ ff regfile_A            (.clk(clk), .reset(reset), .d(RD1),      .q(A));
 ff regfile_Write_data   (.clk(clk), .reset(reset), .d(RD2),      .q(WriteData));
 
 // ALU input MUXes
-mux4 ALUSrcA_mux_3      (.d0(PC), .d1(OldPC), .d2(A),         .d3(32'b11), .sel(ALUSrcA), .op(SrcA));
+mux4 ALUSrcA_mux_3      (.d0(PC), .d1(OldPC), .d2(A),         .d3(32'b0), .sel(ALUSrcA), .op(SrcA));//here i am engaing the last port 11 to select 0 for auipc and luipc
 mux4 ALUSrcB_mux        (.d0(WriteData), .d1(ImmExt), .d2(32'd4), .d3(32'b11), .sel(ALUSrcB), .op(SrcB));
 
 // ALU
@@ -87,7 +87,7 @@ ff alu_result           (.clk(clk), .reset(reset), .d(ALUResult), .q(ALUOut));
 
 // Result multiplexer
 mux4 ResultSrc_mux      (.d0(ALUOut), .d1(Data), .d2(ALUResult), .d3(32'b0),
-                         .sel(ResultSrc), .op(Result));
+                        .sel(ResultSrc), .op(Result));
 
 // Assign memory interface outputs
 assign Mem_WrAddr = Adr;

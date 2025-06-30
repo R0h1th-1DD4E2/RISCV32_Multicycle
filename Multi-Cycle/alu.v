@@ -56,10 +56,11 @@ module alu(
                 ALUResult = SrcA >> SrcB[4:0];  // Shift right by lower 5 bits of SrcB
                 carry_temp = SrcA[0];  // Capture the least significant bit before shift
             end
-            4'b1000:begin  // sra (Shift Right Arithmetic)
-                ALUResult = SrcA >>> SrcB[4:0];  // Arithmetic shift right
-                carry_temp = SrcA[0];  // Capture the least significant bit before shift
+            4'b1000: begin  // SRA (Shift Right Arithmetic)
+                ALUResult = $signed(SrcA) >>> SrcB[4:0];  // Sign-extended right shift
+                carry_temp = SrcA[0];                    // Capture LSB before shift
             end
+
             4'b1001: begin  // sll (Shift Left Logical)
                 ALUResult = SrcA << SrcB[4:0];  // Shift left by lower 5 bits of SrcB
                 carry_temp = SrcA[31];  // Capture the most significant bit before shift
@@ -77,9 +78,9 @@ module alu(
     assign Negative = ALUResult[31];
     assign Carry = carry_temp;
     assign Overflow = (ALUControl == 4'b0000) ? 
-                      ((SrcA[31] == SrcB[31]) && (SrcA[31] != ALUResult[31])) :  // ADD overflow
-                      (ALUControl == 4'b0001) ? 
-                      ((SrcA[31] != SrcB[31]) && (SrcA[31] != ALUResult[31])) :  // SUB overflow
-                      1'b0; 
+                    ((SrcA[31] == SrcB[31]) && (SrcA[31] != ALUResult[31])) :  // ADD overflow
+                    (ALUControl == 4'b0001) ? 
+                    ((SrcA[31] != SrcB[31]) && (SrcA[31] != ALUResult[31])) :  // SUB overflow
+                    1'b0; 
 
 endmodule
