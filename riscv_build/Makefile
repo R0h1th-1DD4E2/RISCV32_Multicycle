@@ -140,6 +140,16 @@ verify_c: program_c.bin
 clean:
 	rm -f *.o *.elf *.hex *.bin *.mem *.dis *.sym *.map
 
+# .coe FILE (XILINX fromat similar to .mem) 
+%.coe: %.bin
+	@echo "Generating $@ from $<..."
+	@hexdump -v -e '1/4 "%08x\n"' $< > $*.tmphex
+	@echo "memory_initialization_radix=16;" > $@
+	@echo "memory_initialization_vector=" >> $@
+	@sed '$$!s/$$/,/' $*.tmphex >> $@
+	@sed -i '$$s/,$$/;/' $@
+	@rm -f $*.tmphex
+
 # Usage information
 help:
 	@echo "RISC-V32I Makefile for Multicycle Core"
