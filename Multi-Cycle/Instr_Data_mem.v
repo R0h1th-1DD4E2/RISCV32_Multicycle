@@ -22,7 +22,7 @@ module Instr_Data_mem(
     // initialize instruction memory from file
     initial 
     begin
-         $readmemh("rv32i_book.hex", ram);
+         $readmemh("program_asm.mem", ram);
     end
 
 endmodule

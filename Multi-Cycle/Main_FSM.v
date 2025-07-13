@@ -65,10 +65,10 @@ always @(*) begin
             // ImmSrc     = (op == 7'h6f) ? 3'b011 : 3'b000;
             case(op)
                 7'b0000011 : ImmSrc = 3'b000;    // load I type
-                7'b0110011 : ImmSrc = 3'b010;    // B type
+                7'b1100011 : ImmSrc = 3'b010;    // B type
                 7'b1101111 : ImmSrc = 3'b011;    // J 
                 7'b0110111 : ImmSrc = 3'b100;    // LUI
-                7'b0010111 : ImmSrc = 3'b101;    // AUIPC
+                7'b0010111 : ImmSrc = 3'b100;    // AUIPC
                 default : ImmSrc = 3'b000;
             endcase
             ResultSrc  = 2'b00;
