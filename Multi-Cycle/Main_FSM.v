@@ -77,7 +77,13 @@ always @(*) begin
         S2_MemAdr: begin
             ALUSrcA    = 2'b10;
             ALUSrcB    = 2'b01;
-            ImmSrc     = op[5] ? 3'b001 : 3'b000;
+            // ImmSrc     = op[5] ? 3'b001 : 3'b000;
+            case(op)
+                7'b0000011 : ImmSrc = 3'b000;    // load I type
+                7'b0100011 : ImmSrc = 3'b001;    // S type
+                7'b1100111 : ImmSrc = 3'b000;
+                default : ImmSrc = 3'b000;
+            endcase
             ALUOp      = 2'b00;
             MemWrite   = 1'b0;
             RegWrite   = 1'b0;
